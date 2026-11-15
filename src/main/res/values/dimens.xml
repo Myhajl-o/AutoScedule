@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <dimen name="screen_padding">20dp</dimen>
+  <dimen name="button_border">3dp</dimen>
+  <dimen name="input_border">2dp</dimen>
+  <dimen name="dialog_border">3dp</dimen>
+</resources>

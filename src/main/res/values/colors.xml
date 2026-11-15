@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="screen_bg">#000000</color>
+  <color name="button_bg">#FFFFFF</color>
+  <color name="button_border">#000000</color>
+  <color name="text_primary">#FFFFFF</color>
+  <color name="text_dim">#AAAAAA</color>
+  <color name="divider">#555555</color>
+</resources>

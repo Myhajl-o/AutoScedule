@@ -2,6 +2,237 @@ package com.auto.schedule;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
 
-public class MainActivity {
+import com.auto.schedule.data.RetrieveSchedule;
+import com.auto.schedule.data.Storage;
+import com.auto.schedule.model.Schedule;
+import com.auto.schedule.model.UserData;
+import com.auto.schedule.ui.InputDomen;
+import com.auto.schedule.ui.InputUserData;
+import com.auto.schedule.ui.ShowSchedule;
+
+import java.time.format.DateTimeFormatter;
+
+/**
+ * Головний екран застосунку: п'ять кнопок у термінальному стилі та
+ * рядок стану із поточними даними.
+ *
+ * <p>Кнопки: показати розклад, ввести дані користувача, ввести адресу
+ * сервера, оновити розклад, вийти.</p>
+ */
+public class MainActivity extends Activity {
+
+  private static final DateTimeFormatter STAMP_FORMAT =
+      DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+
+  /** Адреса сервера розкладу. */
+  private String domen;
+
+  /** Факультет, курс і група користувача. */
+  private UserData data;
+
+  /** Останній завантажений розклад. */
+  private Schedule schedule;
+
+  private TextView status;
+  private Button updateButton;
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    status = findViewById(R.id.status);
+    updateButton = findViewById(R.id.btn_update_schedule);
+
+    findViewById(R.id.btn_show_schedule).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        if (schedule == null) {
+          toast("No schedule yet - press Update Schedule");
+          return;
+        }
+        new ShowSchedule(MainActivity.this).show(schedule);
+      }
+    });
+
+    findViewById(R.id.btn_input_user_data).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        inputUserData();
+      }
+    });
+
+    findViewById(R.id.btn_input_url).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        inputDomen();
+      }
+    });
+
+    updateButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        updateSchedule();
+      }
+    });
+
+    findViewById(R.id.btn_exit).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        finishAffinity();
+      }
+    });
+
+    loader();
+    draving();
+  }
+
+  // ------------------------------------------------------------------
+  // Дані
+  // ------------------------------------------------------------------
+
+  /** Підтягує збережені дані з локального сховища. */
+  private void loader() {
+    domen = Storage.loadDomen(this);
+    data = Storage.loadUserData(this);
+    schedule = Storage.loadSchedule(this);
+  }
+
+  /** Перемальовує рядок стану під кнопками. */
+  private void draving() {
+    StringBuilder text = new StringBuilder();
+    text.append("Server: ").append(isEmpty(domen) ? "not set" : domen).append('\n');
+
+    if (data == null) {
+      text.append("User data: not set");
+    } else {
+      text.append("Faculty: ").append(data.faculty).append('\n');
+      text.append("Group: ").append(data.group)
+          .append(" (").append(data.studyYear).append(" course)");
+    }
+
+    text.append('\n');
+    if (schedule == null) {
+      text.append("Schedule: not loaded");
+    } else {
+      int count = schedule.sched == null ? 0 : schedule.sched.size();
+      text.append("Schedule: ").append(count)
+          .append(count == 1 ? " lesson" : " lessons");
+      if (schedule.updateTime != null) {
+        text.append(", updated ").append(STAMP_FORMAT.format(schedule.updateTime));
+      }
+    }
+
+    status.setText(text.toString());
+  }
+
+  // ------------------------------------------------------------------
+  // Дії кнопок
+  // ------------------------------------------------------------------
+
+  private void inputUserData() {
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        final UserData entered = new InputUserData(MainActivity.this).input();
+        runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            if (entered == null) {
+              return;
+            }
+            data = entered;
+            Storage.saveUserData(MainActivity.this, entered);
+            draving();
+            toast("User data saved");
+          }
+        });
+      }
+    }, "input-user-data").start();
+  }
+
+  private void inputDomen() {
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        final String entered = new InputDomen(MainActivity.this).input();
+        runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            if (entered == null) {
+              return;
+            }
+            domen = entered;
+            Storage.saveDomen(MainActivity.this, entered);
+            draving();
+            toast("Server URL saved");
+          }
+        });
+      }
+    }, "input-domen").start();
+  }
+
+  private void updateSchedule() {
+    if (isEmpty(domen)) {
+      toast("Enter the server URL first");
+      return;
+    }
+    if (data == null) {
+      toast("Enter user data first");
+      return;
+    }
+
+    final String requestDomen = domen;
+    final UserData requestData = data;
+
+    updateButton.setEnabled(false);
+    status.setText("Loading schedule...");
+
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          final Schedule fetched = new RetrieveSchedule().retrieve(requestDomen, requestData);
+          runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              schedule = fetched;
+              Storage.saveSchedule(MainActivity.this, schedule);
+              updateButton.setEnabled(true);
+              draving();
+              int count = schedule.sched == null ? 0 : schedule.sched.size();
+              toast("Schedule updated: " + count
+                  + (count == 1 ? " lesson" : " lessons"));
+            }
+          });
+        } catch (final RuntimeException e) {
+          runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              updateButton.setEnabled(true);
+              draving();
+              toast("Update failed: " + e.getMessage());
+            }
+          });
+        }
+      }
+    }, "update-schedule").start();
+  }
+
+  // ------------------------------------------------------------------
+  // Дрібне
+  // ------------------------------------------------------------------
+
+  private boolean isEmpty(String value) {
+    return value == null || value.trim().isEmpty();
+  }
+
+  private void toast(String text) {
+    Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+  }
 }
