@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-  <!-- Темна тема у термінальному стилі: чорний фон, моноширинний шрифт. -->
-  <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+  <!-- Світла тема: білий фон, чорний текст, моноширинний шрифт. -->
+  <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
     <item name="android:windowBackground">@color/screen_bg</item>
     <item name="android:statusBarColor">@color/screen_bg</item>
-    <item name="android:navigationBarColor">@color/screen_bg</item>
-    <item name="android:colorAccent">@color/text_primary</item>
+    <item name="android:windowLightStatusBar">true</item>
+    <item name="android:navigationBarColor">@color/button_border</item>
+    <item name="android:colorAccent">@color/button_border</item>
     <item name="android:fontFamily">monospace</item>
-    <item name="android:textColorPrimary">@color/text_primary</item>
-    <item name="android:textColorSecondary">@color/text_dim</item>
+    <item name="android:textColorPrimary">@color/text_on_light</item>
+    <item name="android:textColorSecondary">@color/text_dim_on_light</item>
   </style>
 
-  <!-- Діалоги: чорне вікно з білою рамкою. -->
-  <style name="AutoSchedule.DialogTheme" parent="android:Theme.Material.Dialog.Alert">
+  <!-- Діалоги введення: біле вікно з чорною рамкою, чорний текст. -->
+  <style name="AutoSchedule.DialogTheme" parent="android:Theme.Material.Light.Dialog.Alert">
     <item name="android:windowBackground">@drawable/bg_dialog</item>
-    <item name="android:colorAccent">@color/text_primary</item>
+    <item name="android:colorAccent">@color/button_border</item>
     <item name="android:fontFamily">monospace</item>
-    <item name="android:textColorPrimary">@color/text_primary</item>
-    <item name="android:textColorSecondary">@color/text_dim</item>
+    <item name="android:textColorPrimary">@color/text_on_light</item>
+    <item name="android:textColorSecondary">@color/text_dim_on_light</item>
   </style>
 
   <!-- Кнопка: білий прямокутник із чорною рамкою 3dp, без заокруглень. -->
@@ -34,16 +35,27 @@
     <item name="android:stateListAnimator">@null</item>
   </style>
 
-  <!-- Поле введення: чорний фон, білий текст, біла рамка 2dp. -->
+  <!-- Поле введення: білий фон, чорний текст, чорна рамка 2dp. -->
   <style name="Widget.AutoSchedule.Input" parent="android:Widget.EditText">
     <item name="android:layout_width">match_parent</item>
     <item name="android:layout_height">wrap_content</item>
-    <item name="android:layout_marginTop">10dp</item>
+    <item name="android:layout_marginTop">6dp</item>
     <item name="android:background">@drawable/bg_input</item>
     <item name="android:padding">10dp</item>
-    <item name="android:textColor">@color/text_primary</item>
-    <item name="android:textColorHint">@color/text_dim</item>
+    <item name="android:textColor">@color/text_on_light</item>
+    <item name="android:textColorHint">@color/text_dim_on_light</item>
     <item name="android:textSize">16sp</item>
+  </style>
+
+  <!-- Підпис над полем введення. -->
+  <style name="Widget.AutoSchedule.Label" parent="">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:layout_marginTop">14dp</item>
+    <item name="android:fontFamily">monospace</item>
+    <item name="android:textColor">@color/text_on_light</item>
+    <item name="android:textSize">14sp</item>
+    <item name="android:textStyle">bold</item>
   </style>
 
 </resources>

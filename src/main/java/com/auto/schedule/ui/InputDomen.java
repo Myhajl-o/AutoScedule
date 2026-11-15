@@ -9,7 +9,6 @@ import android.view.View;
 import android.widget.EditText;
 
 import com.auto.schedule.R;
-import com.auto.schedule.data.Storage;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -66,11 +65,6 @@ public class InputDomen implements Inputinfo<String> {
 
     View content = activity.getLayoutInflater().inflate(R.layout.dialog_input_domen, null);
     final EditText url = content.findViewById(R.id.input_url);
-
-    String current = Storage.loadDomen(activity);
-    if (current != null) {
-      url.setText(current);
-    }
 
     final AlertDialog dialog = new AlertDialog.Builder(activity, R.style.AutoSchedule_DialogTheme)
         .setTitle(R.string.dialog_url_title)

@@ -5,23 +5,32 @@
     android:orientation="vertical"
     android:padding="20dp">
 
+    <TextView
+        style="@style/Widget.AutoSchedule.Label"
+        android:text="@string/label_faculty" />
+
     <EditText
         android:id="@+id/input_faculty"
         style="@style/Widget.AutoSchedule.Input"
-        android:hint="@string/hint_faculty"
         android:inputType="text" />
+
+    <TextView
+        style="@style/Widget.AutoSchedule.Label"
+        android:text="@string/label_course" />
 
     <EditText
         android:id="@+id/input_course"
         style="@style/Widget.AutoSchedule.Input"
-        android:hint="@string/hint_course"
         android:inputType="number"
         android:maxLength="1" />
+
+    <TextView
+        style="@style/Widget.AutoSchedule.Label"
+        android:text="@string/label_group" />
 
     <EditText
         android:id="@+id/input_group"
         style="@style/Widget.AutoSchedule.Input"
-        android:hint="@string/hint_group"
         android:inputType="text" />
 
 </LinearLayout>

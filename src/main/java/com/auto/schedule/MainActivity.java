@@ -7,9 +7,11 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.auto.schedule.data.GetStudySchedule;
 import com.auto.schedule.data.RetrieveSchedule;
 import com.auto.schedule.data.Storage;
 import com.auto.schedule.model.Schedule;
+import com.auto.schedule.model.Student;
 import com.auto.schedule.model.UserData;
 import com.auto.schedule.ui.InputDomen;
 import com.auto.schedule.ui.InputUserData;
@@ -32,7 +34,7 @@ public class MainActivity extends Activity {
   /** Адреса сервера розкладу. */
   private String domen;
 
-  /** Факультет, курс і група користувача. */
+  /** Дані користувача, для якого завантажується розклад. */
   private UserData data;
 
   /** Останній завантажений розклад. */
@@ -99,7 +101,7 @@ public class MainActivity extends Activity {
   /** Підтягує збережені дані з локального сховища. */
   private void loader() {
     domen = Storage.loadDomen(this);
-    data = Storage.loadUserData(this);
+    data = Student.fromValues(Storage.loadUserData(this));
     schedule = Storage.loadSchedule(this);
   }
 
@@ -111,9 +113,7 @@ public class MainActivity extends Activity {
     if (data == null) {
       text.append("User data: not set");
     } else {
-      text.append("Faculty: ").append(data.faculty).append('\n');
-      text.append("Group: ").append(data.group)
-          .append(" (").append(data.studyYear).append(" course)");
+      text.append(data.describe());
     }
 
     text.append('\n');
@@ -147,7 +147,7 @@ public class MainActivity extends Activity {
               return;
             }
             data = entered;
-            Storage.saveUserData(MainActivity.this, entered);
+            Storage.saveUserData(MainActivity.this, entered.toValues());
             draving();
             toast("User data saved");
           }
@@ -197,7 +197,8 @@ public class MainActivity extends Activity {
       @Override
       public void run() {
         try {
-          final Schedule fetched = new RetrieveSchedule().retrieve(requestDomen, requestData);
+          final Schedule fetched = new RetrieveSchedule()
+              .retrieve(requestDomen, new GetStudySchedule(requestData));
           runOnUiThread(new Runnable() {
             @Override
             public void run() {

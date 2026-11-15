@@ -1,6 +1,10 @@
 /target
 /text
 
+app-signed.apk
+app-signed.apk.idsig
+debug.keystore
+
 .idea/
 *.iml
 .classpath

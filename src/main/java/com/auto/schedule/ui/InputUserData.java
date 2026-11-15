@@ -11,13 +11,14 @@ import android.widget.Toast;
 
 import com.auto.schedule.R;
 import com.auto.schedule.data.Storage;
+import com.auto.schedule.model.Student;
 import com.auto.schedule.model.UserData;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Введення даних користувача (факультет, курс, група) через діалог.
+ * Введення даних студента (факультет, курс, група) через діалог.
  *
  * <p>Діалог показується в UI-потоці, а {@link #input()} повертає результат
  * синхронно, тому викликати його треба з фонового потоку. Якщо викликати
@@ -74,11 +75,11 @@ public class InputUserData implements Inputinfo<UserData> {
     final EditText course = content.findViewById(R.id.input_course);
     final EditText group = content.findViewById(R.id.input_group);
 
-    UserData current = Storage.loadUserData(activity);
+    Student current = Student.fromValues(Storage.loadUserData(activity));
     if (current != null) {
-      faculty.setText(current.faculty);
-      course.setText(String.valueOf(current.studyYear));
-      group.setText(current.group);
+      faculty.setText(emptyIfNull(current.faculty));
+      course.setText(emptyIfNull(current.studyYear));
+      group.setText(emptyIfNull(current.group));
     }
 
     final AlertDialog dialog = new AlertDialog.Builder(activity, R.style.AutoSchedule_DialogTheme)
@@ -106,14 +107,14 @@ public class InputUserData implements Inputinfo<UserData> {
               @Override
               public void onClick(View view) {
                 String facultyText = faculty.getText().toString().trim();
+                String courseText = course.getText().toString().trim();
                 String groupText = group.getText().toString().trim();
-                int courseValue = parseCourse(course.getText().toString().trim());
 
                 if (facultyText.isEmpty()) {
                   message("Faculty is required");
                   return;
                 }
-                if (courseValue < 1) {
+                if (!isValidCourse(courseText)) {
                   message("Course must be a number from 1 to 6");
                   return;
                 }
@@ -122,7 +123,7 @@ public class InputUserData implements Inputinfo<UserData> {
                   return;
                 }
 
-                result[0] = new UserData(facultyText, courseValue, groupText);
+                result[0] = new Student(facultyText, courseText, groupText);
                 dialog.dismiss();
               }
             });
@@ -132,12 +133,18 @@ public class InputUserData implements Inputinfo<UserData> {
     dialog.show();
   }
 
-  private int parseCourse(String value) {
+  /** {@code setText(null)} очищає поле, але краще передавати порожній рядок. */
+  private String emptyIfNull(String value) {
+    return value == null ? "" : value;
+  }
+
+  /** Курс — це рядок за моделлю, але вводити можна лише 1–6. */
+  private boolean isValidCourse(String value) {
     try {
       int course = Integer.parseInt(value);
-      return course >= 1 && course <= 6 ? course : -1;
+      return course >= 1 && course <= 6;
     } catch (NumberFormatException e) {
-      return -1;
+      return false;
     }
   }
 

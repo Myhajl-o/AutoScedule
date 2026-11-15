@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 
 import com.auto.schedule.model.Lesson;
 import com.auto.schedule.model.Schedule;
-import com.auto.schedule.model.UserData;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,8 +18,9 @@ import java.util.List;
  * Локальне сховище застосунку.
  *
  * <p>Клас не має власних полів: усі дані лежать у {@link SharedPreferences}
- * (ключі {@code domen}, {@code userData}, {@code schedule}). Об'єкти моделі
- * серіалізуються у JSON, тому сховище переживає перезапуск застосунку.</p>
+ * (ключі {@code domen}, {@code userData}, {@code schedule}). Дані користувача
+ * зберігаються як впорядкований список рядків
+ * {@code [факультет, курс, група]}, розклад — як JSON.</p>
  *
  * <p>{@link Context} передається в кожен метод — саме тому клас не тримає
  * посилання на {@code Context} і не створює витоків пам'яті.</p>
@@ -32,6 +32,9 @@ public final class Storage {
   private static final String KEY_DOMEN = "domen";
   private static final String KEY_USER_DATA = "userData";
   private static final String KEY_SCHEDULE = "schedule";
+
+  /** Кількість полів у списку даних користувача. */
+  private static final int USER_DATA_SIZE = 3;
 
   private Storage() {
     // утилітарний клас: лише статичні методи
@@ -51,29 +54,45 @@ public final class Storage {
   }
 
   // ------------------------------------------------------------------
-  // Дані користувача
+  // Дані користувача: [факультет, курс, група]
   // ------------------------------------------------------------------
 
-  public static void saveUserData(Context context, UserData data) {
+  /**
+   * Зберігає дані користувача.
+   *
+   * @param data список {@code [факультет, курс, група]}; {@code null} очищає запис
+   */
+  public static void saveUserData(Context context, List<String> data) {
     if (data == null) {
       prefs(context).edit().remove(KEY_USER_DATA).apply();
       return;
     }
 
     prefs(context).edit()
-        .putString(KEY_USER_DATA, userDataToJson(data).toString())
+        .putString(KEY_USER_DATA, new JSONArray(data).toString())
         .apply();
   }
 
-  /** @return збережені дані користувача або {@code null}, якщо їх ще немає */
-  public static UserData loadUserData(Context context) {
+  /**
+   * @return збережені дані користувача у вигляді {@code [факультет, курс, група]}
+   *         або {@code null}, якщо їх ще немає
+   */
+  public static List<String> loadUserData(Context context) {
     String raw = prefs(context).getString(KEY_USER_DATA, null);
     if (raw == null) {
       return null;
     }
 
     try {
-      return userDataFromJson(new JSONObject(raw));
+      JSONArray json = new JSONArray(raw);
+      if (json.length() < USER_DATA_SIZE) {
+        return null;
+      }
+      List<String> data = new ArrayList<>(USER_DATA_SIZE);
+      for (int i = 0; i < USER_DATA_SIZE; i++) {
+        data.add(json.isNull(i) ? null : json.optString(i));
+      }
+      return data;
     } catch (JSONException | RuntimeException e) {
       // пошкоджений запис трактуємо як відсутній
       return null;
@@ -116,29 +135,6 @@ public final class Storage {
   private static SharedPreferences prefs(Context context) {
     return context.getApplicationContext()
         .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-  }
-
-  // ------------------------------------------------------------------
-  // Внутрішнє: UserData <-> JSON
-  // ------------------------------------------------------------------
-
-  private static JSONObject userDataToJson(UserData data) {
-    JSONObject json = new JSONObject();
-    try {
-      json.put("faculty", data.faculty);
-      json.put("studyYear", data.studyYear);
-      json.put("group", data.group);
-    } catch (JSONException e) {
-      throw new IllegalStateException("Не вдалося серіалізувати UserData", e);
-    }
-    return json;
-  }
-
-  private static UserData userDataFromJson(JSONObject json) {
-    return new UserData(
-        json.isNull("faculty") ? null : json.optString("faculty"),
-        json.optInt("studyYear"),
-        json.isNull("group") ? null : json.optString("group"));
   }
 
   // ------------------------------------------------------------------

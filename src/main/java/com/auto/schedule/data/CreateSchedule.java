@@ -26,7 +26,9 @@ import java.util.regex.Pattern;
  * </ol>
  *
  * <p>{@link #creating(String)} просто з'єднує обидва кроки і повертає готовий
- * {@link Schedule} з часом оновлення {@code now}.</p>
+ * {@link Schedule} з часом оновлення {@code now}. У розкладі залишаються
+ * заняття лише за один день — сьогоднішній, а якщо на сьогодні їх немає
+ * (наприклад, у неділю), то за перший день, який є у відповіді сервера.</p>
  */
 public class CreateSchedule {
 
@@ -155,10 +157,15 @@ public class CreateSchedule {
   }
 
   /**
-   * Повний цикл: HTML → {@link Schedule}.
+   * Повний цикл: HTML → {@link Schedule} з заняттями за один день.
+   *
+   * <p>Сервер віддає розклад на весь тиждень, але {@link Schedule} за
+   * моделлю містить лише один день. Тому після розбору залишаємо заняття
+   * за сьогодні, а якщо сьогодні у розкладі немає — за найближчий день,
+   * який повернув сервер.</p>
    *
    * @param data HTML-сторінка розкладу
-   * @return розклад із часом оновлення {@code now}
+   * @return розклад із часом оновлення {@code now} та заняттями за один день
    * @throws IllegalArgumentException якщо HTML порожній
    * @throws IllegalStateException    якщо сервер повернув сторінку без розкладу
    *                                  (зазвичай — неправильні факультет, курс або група)
@@ -170,11 +177,60 @@ public class CreateSchedule {
 
     List<Lesson> lessons = forming(parsing(data));
     if (lessons.isEmpty() && !DAY_HEADER.matcher(data).find()) {
-      // Сервер повернув форму введення замість розкладу: тиждень без жодного дня.
+      // Сервер повернув форму введення замість розкладу.
       throw new IllegalStateException(
-          "Сервер не повернув розклад — перевірте факультет, курс і групу");
+          "Сервер не повернув розклад — перевірте параметри запиту");
     }
-    return new Schedule(ZonedDateTime.now(), lessons);
+    return new Schedule(ZonedDateTime.now(), selectDay(lessons));
+  }
+
+  /**
+   * Залишає заняття лише за один день.
+   *
+   * <p>Спочатку пробуємо сьогоднішню дату. Якщо на сьогодні занять немає
+   * (вихідний, святковий день або розклад починається з наступного
+   * тижня), беремо найперший день, який є у відповіді сервера.</p>
+   *
+   * @param lessons усі заняття тижня
+   * @return заняття за вибраний день; ніколи не {@code null}
+   */
+  private List<Lesson> selectDay(List<Lesson> lessons) {
+    List<Lesson> selected = new ArrayList<>();
+    if (lessons == null || lessons.isEmpty()) {
+      return selected;
+    }
+
+    LocalDate today = LocalDate.now();
+    for (Lesson lesson : lessons) {
+      if (lesson.startsAt != null && today.equals(lesson.startsAt.toLocalDate())) {
+        selected.add(lesson);
+      }
+    }
+    if (!selected.isEmpty()) {
+      return selected;
+    }
+
+    // Сьогодні у розкладі немає — беремо найперший день, який є.
+    LocalDate firstDay = null;
+    for (Lesson lesson : lessons) {
+      if (lesson.startsAt == null) {
+        continue;
+      }
+      LocalDate day = lesson.startsAt.toLocalDate();
+      if (firstDay == null || day.isBefore(firstDay)) {
+        firstDay = day;
+      }
+    }
+    if (firstDay == null) {
+      return selected;
+    }
+
+    for (Lesson lesson : lessons) {
+      if (lesson.startsAt != null && firstDay.equals(lesson.startsAt.toLocalDate())) {
+        selected.add(lesson);
+      }
+    }
+    return selected;
   }
 
   // ------------------------------------------------------------------

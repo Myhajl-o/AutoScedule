@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:fontFamily="monospace"
-        android:textColor="@color/text_dim"
+        android:textColor="@color/text_dim_on_light"
         android:textSize="13sp" />
 
     <ScrollView

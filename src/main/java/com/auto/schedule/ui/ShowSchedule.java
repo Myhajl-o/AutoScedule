@@ -21,11 +21,12 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Показує розклад у повноекранному діалозі в термінальному стилі.
+ * Показує розклад у повноекранному діалозі в термінальному стилі:
+ * біле вікно з чорною рамкою і чорним текстом.
  *
- * <p>Заняття групуються за днями, всередині дня сортуються за часом
- * початку. Для кожного заняття виводяться час, назва (разом із типом і
- * аудиторією) та викладач.</p>
+ * <p>{@link Schedule} містить заняття лише за один день, тому вони просто
+ * сортуються за часом початку. Для кожного заняття виводяться час, назва
+ * (разом із типом і аудиторією) та викладач.</p>
  */
 public class ShowSchedule {
 
@@ -69,7 +70,7 @@ public class ShowSchedule {
     if (lessons.isEmpty()) {
       TextView empty = new TextView(activity);
       empty.setText(R.string.msg_no_lessons);
-      empty.setTextColor(activity.getColor(R.color.text_dim));
+      empty.setTextColor(activity.getColor(R.color.text_dim_on_light));
       empty.setTypeface(updated.getTypeface());
       empty.setTextSize(16f);
       container.addView(empty);
@@ -123,7 +124,12 @@ public class ShowSchedule {
     subject.setText(lesson.subject == null ? "" : lesson.subject);
 
     if (lesson.teacher == null || lesson.teacher.trim().isEmpty()) {
-      teacher.setVisibility(View.GONE);
+      // Для розкладу викладача ім'я в клітинці не повторюється — показуємо групу.
+      if (lesson.group == null || lesson.group.trim().isEmpty()) {
+        teacher.setVisibility(View.GONE);
+      } else {
+        teacher.setText(lesson.group);
+      }
     } else {
       teacher.setText(lesson.teacher);
     }

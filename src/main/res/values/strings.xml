@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="app_name">AutoSchedule</string>
-  <string name="app_title">AUTO SCHEDULE</string>
 
   <string name="btn_show_schedule">Show Schedule</string>
   <string name="btn_input_user_data">Input User Data</string>
@@ -10,12 +9,11 @@
   <string name="btn_exit">Exit</string>
 
   <string name="dialog_user_data_title">User Data</string>
-  <string name="hint_faculty">Faculty (name or ID)</string>
-  <string name="hint_course">Course (1-6)</string>
-  <string name="hint_group">Group</string>
+  <string name="label_faculty">Faculty</string>
+  <string name="label_course">Course</string>
+  <string name="label_group">Group</string>
 
   <string name="dialog_url_title">Server URL</string>
-  <string name="hint_url">https://asu.ifntung.edu.ua</string>
 
   <string name="dialog_schedule_title">Schedule</string>
   <string name="msg_no_lessons">No lessons</string>
