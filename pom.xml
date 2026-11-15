@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.auto.schedule</groupId>
+  <artifactId>autoschedule</artifactId>
+  <version>1.0.0</version>
+  <packaging>apk</packaging>
+  <name>AutoSchedule</name>
+  <description>Android-застосунок для перегляду розкладу та нагадувань про заняття</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+
+    <!-- Локальний Android SDK: $ANDROID_HOME/platforms/android-30 (для компіляції) -->
+    <android.sdk.dir>${env.ANDROID_HOME}</android.sdk.dir>
+    <android.platform.version>30</android.platform.version>
+    <android.buildtools.version>30.0.3</android.buildtools.version>
+    <android.plugin.version>4.6.0</android.plugin.version>
+  </properties>
+
+  <dependencies>
+    <!-- android.jar зі встановленої платформи SDK: дає android.* для компіляції -->
+    <dependency>
+      <groupId>com.google.android</groupId>
+      <artifactId>android</artifactId>
+      <version>${android.platform.version}</version>
+      <scope>system</scope>
+      <systemPath>${android.sdk.dir}/platforms/android-${android.platform.version}/android.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <encoding>${project.build.sourceEncoding}</encoding>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.simpligility.maven.plugins</groupId>
+        <artifactId>android-maven-plugin</artifactId>
+        <version>${android.plugin.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <sdk>
+            <platform>${android.platform.version}</platform>
+            <buildTools>${android.buildtools.version}</buildTools>
+          </sdk>
+          <!-- android.jar з SDK — лише для компіляції, у dex він не потрапляє -->
+          <skipDependencies>true</skipDependencies>
+          <!--
+            Підпис від debug-keystore вимкнено: у android-maven-plugin 4.x він
+            використовує sun.misc.BASE64Encoder, якого немає в JDK 11+.
+            Готовий APK підписується окремо apksigner-ом (build-tools 30+).
+          -->
+          <sign>
+            <debug>false</debug>
+          </sign>
+        </configuration>
+        <dependencies>
+          <!-- android-maven-plugin 4.x використовує JAXB, якого немає в JDK 11+ -->
+          <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+          </dependency>
+          <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.3.9</version>
+          </dependency>
+          <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>javax.activation-api</artifactId>
+            <version>1.2.0</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
