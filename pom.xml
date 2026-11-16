@@ -70,6 +70,11 @@
           <!-- android.jar з SDK — лише для компіляції, у dex він не потрапляє -->
           <skipDependencies>true</skipDependencies>
           <!--
+            Релізна збірка: без android:debuggable="true" у маніфесті
+            (за замовчуванням плагін збирає debug-варіант).
+          -->
+          <release>true</release>
+          <!--
             Підпис від debug-keystore вимкнено: у android-maven-plugin 4.x він
             використовує sun.misc.BASE64Encoder, якого немає в JDK 11+.
             Готовий APK підписується окремо apksigner-ом (build-tools 30+).
@@ -96,6 +101,27 @@
             <version>1.2.0</version>
           </dependency>
         </dependencies>
+        <executions>
+          <!--
+            Вирівнювання APK по 4 байти після пакування: без цього
+            resources.arsc лежить не на межі 4 байт, і частина
+            інсталяторів відмовляється розбирати пакет («під час аналізу
+            пакета виникла помилка»). Підписувати треба вже вирівняний
+            файл.
+          -->
+          <execution>
+            <id>zipalign-apk</id>
+            <phase>package</phase>
+            <goals>
+              <goal>zipalign</goal>
+            </goals>
+            <configuration>
+              <!-- у standalone-мохо zipalign пропуск увімкнено за замовчуванням -->
+              <zipalignSkip>false</zipalignSkip>
+              <zipalignVerbose>true</zipalignVerbose>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>

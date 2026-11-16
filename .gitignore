@@ -1,15 +1,21 @@
+# Build output
 /target
 /text
 
-app-signed.apk
-app-signed.apk.idsig
-debug.keystore
+# Build artifacts (sign them yourself with build.sh)
+*.apk
+*.apk.idsig
+*.keystore
 
+# IDE
 .idea/
 *.iml
 .classpath
 .project
 .settings/
 
-/AGENTS.md
+# OS
+.DS_Store
+Thumbs.db
 
+/AGENTS.md

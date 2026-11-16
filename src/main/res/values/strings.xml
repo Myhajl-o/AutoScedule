@@ -21,4 +21,8 @@
   <string name="action_save">Save</string>
   <string name="action_cancel">Cancel</string>
   <string name="action_close">Close</string>
+
+  <string name="notification_channel_name">Lesson reminders</string>
+  <string name="notification_channel_description">Notifications 10 minutes before a lesson</string>
+  <string name="notification_title">Lesson reminder</string>
 </resources>

@@ -1,6 +1,8 @@
 package com.auto.schedule;
 
 import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -13,6 +15,7 @@ import com.auto.schedule.data.Storage;
 import com.auto.schedule.model.Schedule;
 import com.auto.schedule.model.Student;
 import com.auto.schedule.model.UserData;
+import com.auto.schedule.reminder.ReminderReceiver;
 import com.auto.schedule.ui.InputDomen;
 import com.auto.schedule.ui.InputUserData;
 import com.auto.schedule.ui.ShowSchedule;
@@ -30,6 +33,9 @@ public class MainActivity extends Activity {
 
   private static final DateTimeFormatter STAMP_FORMAT =
       DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+
+  /** Код запиту дозволу на повідомлення (Android 13+). */
+  private static final int REQUEST_NOTIFICATIONS = 1;
 
   /** Адреса сервера розкладу. */
   private String domen;
@@ -92,6 +98,9 @@ public class MainActivity extends Activity {
 
     loader();
     draving();
+
+    ReminderReceiver.scheduleDaily(this);
+    requestNotificationPermission();
   }
 
   // ------------------------------------------------------------------
@@ -204,6 +213,7 @@ public class MainActivity extends Activity {
             public void run() {
               schedule = fetched;
               Storage.saveSchedule(MainActivity.this, schedule);
+              ReminderReceiver.scheduleReminders(MainActivity.this, schedule);
               updateButton.setEnabled(true);
               draving();
               int count = schedule.sched == null ? 0 : schedule.sched.size();
@@ -231,6 +241,16 @@ public class MainActivity extends Activity {
 
   private boolean isEmpty(String value) {
     return value == null || value.trim().isEmpty();
+  }
+
+  /** Android 13+ вимагає явного дозволу на показ повідомлень. */
+  private void requestNotificationPermission() {
+    if (Build.VERSION.SDK_INT >= 33
+        && checkSelfPermission("android.permission.POST_NOTIFICATIONS")
+            != PackageManager.PERMISSION_GRANTED) {
+      requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},
+          REQUEST_NOTIFICATIONS);
+    }
   }
 
   private void toast(String text) {
