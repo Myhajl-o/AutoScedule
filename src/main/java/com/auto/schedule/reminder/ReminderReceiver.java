@@ -204,14 +204,58 @@ public class ReminderReceiver extends BroadcastReceiver {
     }
   }
 
-  /** @return {@code true}, якщо сьогоднішні пари вже закінчилися */
+  /** @return {@code true}, якщо вже час підтягувати наступний день */
   private boolean needsSilentRefresh() {
-    ZonedDateTime now = ZonedDateTime.now();
-    ZonedDateTime lastEnd = lastLessonEndToday(schedule, now.toLocalDate());
-    if (lastEnd != null) {
-      return now.isAfter(lastEnd);
+    return !targetDay(schedule).equals(LocalDate.now());
+  }
+
+  /**
+   * Визначає день, за який треба завантажити розклад.
+   *
+   * <p>Поки пари на сьогодні не закінчилися — сьогодні. Після останньої
+   * пари (або після 16:00, якщо пар сьогодні немає) — наступний день.
+   * Якщо у сховищі вже лежить наступний день, повертається саме він, щоб
+   * повторне оновлення не поверталося до сьогодні.</p>
+   *
+   * <p>Використовується і тихим оновленням у {@link ReminderReceiver},
+   * і кнопкою «Update Schedule» у {@code MainActivity}.</p>
+   *
+   * @param known поточний розклад зі сховища; може бути {@code null}
+   * @return день, за який треба завантажити розклад
+   */
+  public static LocalDate targetDay(Schedule known) {
+    LocalDate today = LocalDate.now();
+
+    // У сховищі вже наступний день — оновлюємо саме його.
+    LocalDate storedDay = firstLessonDay(known);
+    if (storedDay != null && storedDay.isAfter(today)) {
+      return storedDay;
     }
-    return now.toLocalTime().isAfter(LocalTime.of(NO_LESSONS_HOUR, 0));
+
+    ZonedDateTime lastEnd = lastLessonEndToday(known, today);
+    boolean finished = lastEnd != null
+        ? ZonedDateTime.now().isAfter(lastEnd)
+        : LocalTime.now().isAfter(LocalTime.of(NO_LESSONS_HOUR, 0));
+    return finished ? today.plusDays(1) : today;
+  }
+
+  /** @return найперший день із занять розкладу або {@code null} */
+  private static LocalDate firstLessonDay(Schedule schedule) {
+    if (schedule == null || schedule.sched == null) {
+      return null;
+    }
+
+    LocalDate first = null;
+    for (Lesson lesson : schedule.sched) {
+      if (lesson == null || lesson.startsAt == null) {
+        continue;
+      }
+      LocalDate day = lesson.startsAt.toLocalDate();
+      if (first == null || day.isBefore(first)) {
+        first = day;
+      }
+    }
+    return first;
   }
 
   // ------------------------------------------------------------------

@@ -20,6 +20,7 @@ import com.auto.schedule.ui.InputDomen;
 import com.auto.schedule.ui.InputUserData;
 import com.auto.schedule.ui.ShowSchedule;
 
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -33,6 +34,10 @@ public class MainActivity extends Activity {
 
   private static final DateTimeFormatter STAMP_FORMAT =
       DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+
+  /** Дата в повідомленні про оновлення. */
+  private static final DateTimeFormatter DATE_FORMAT =
+      DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
   /** Код запиту дозволу на повідомлення (Android 13+). */
   private static final int REQUEST_NOTIFICATIONS = 1;
@@ -198,6 +203,8 @@ public class MainActivity extends Activity {
 
     final String requestDomen = domen;
     final UserData requestData = data;
+    // Після закінчення пар кнопка теж підтягує наступний день.
+    final LocalDate targetDay = ReminderReceiver.targetDay(schedule);
 
     updateButton.setEnabled(false);
     status.setText("Loading schedule...");
@@ -206,8 +213,11 @@ public class MainActivity extends Activity {
       @Override
       public void run() {
         try {
-          final Schedule fetched = new RetrieveSchedule()
-              .retrieve(requestDomen, new GetStudySchedule(requestData));
+          RetrieveSchedule retriever = new RetrieveSchedule();
+          GetStudySchedule source = new GetStudySchedule(requestData);
+          final Schedule fetched = targetDay.equals(LocalDate.now())
+              ? retriever.retrieve(requestDomen, source)
+              : retriever.retrieve(requestDomen, source, targetDay);
           runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -217,7 +227,10 @@ public class MainActivity extends Activity {
               updateButton.setEnabled(true);
               draving();
               int count = schedule.sched == null ? 0 : schedule.sched.size();
-              toast("Schedule updated: " + count
+              String day = targetDay.equals(LocalDate.now())
+                  ? ""
+                  : " for " + DATE_FORMAT.format(targetDay);
+              toast("Schedule updated" + day + ": " + count
                   + (count == 1 ? " lesson" : " lessons"));
             }
           });
