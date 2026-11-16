@@ -66,7 +66,16 @@ public class FormingMassange {
     String subject = lesson.subject == null || lesson.subject.trim().isEmpty()
         ? "Lesson"
         : lesson.subject;
-    return "In " + REMIND_BEFORE_MINUTES + " min: " + subject
-        + " at " + TIME_FORMAT.format(lesson.startsAt);
+
+    StringBuilder text = new StringBuilder()
+        .append("In ").append(REMIND_BEFORE_MINUTES).append(" min: ")
+        .append(subject)
+        .append(" at ").append(TIME_FORMAT.format(lesson.startsAt));
+
+    // Сервер не друкує групу, якщо пара саме для групи студента.
+    if (lesson.group != null && !lesson.group.trim().isEmpty()) {
+      text.append('\n').append("Group: ").append(lesson.group.trim());
+    }
+    return text.toString();
   }
 }

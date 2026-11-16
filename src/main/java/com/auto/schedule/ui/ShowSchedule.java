@@ -119,19 +119,23 @@ public class ShowSchedule {
     TextView time = row.findViewById(R.id.lesson_time);
     TextView subject = row.findViewById(R.id.lesson_subject);
     TextView teacher = row.findViewById(R.id.lesson_teacher);
+    TextView group = row.findViewById(R.id.lesson_group);
 
     time.setText(timeRange(lesson.startsAt, lesson.endsAt));
     subject.setText(lesson.subject == null ? "" : lesson.subject);
 
     if (lesson.teacher == null || lesson.teacher.trim().isEmpty()) {
-      // Для розкладу викладача ім'я в клітинці не повторюється — показуємо групу.
-      if (lesson.group == null || lesson.group.trim().isEmpty()) {
-        teacher.setVisibility(View.GONE);
-      } else {
-        teacher.setText(lesson.group);
-      }
+      teacher.setVisibility(View.GONE);
     } else {
       teacher.setText(lesson.teacher);
+    }
+
+    // Група або потік із {@code <span class="gr2_name">}. Для занять своєї
+    // групи сервер це поле не друкує, тому рядок просто ховається.
+    if (lesson.group == null || lesson.group.trim().isEmpty()) {
+      group.setVisibility(View.GONE);
+    } else {
+      group.setText(lesson.group.trim());
     }
     return row;
   }

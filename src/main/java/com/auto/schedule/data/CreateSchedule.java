@@ -171,6 +171,43 @@ public class CreateSchedule {
    *                                  (зазвичай — неправильні факультет, курс або група)
    */
   public Schedule creating(String data) {
+    List<Lesson> lessons = readLessons(data);
+    return new Schedule(ZonedDateTime.now(), selectDay(lessons));
+  }
+
+  /**
+   * Повний цикл для конкретного дня: HTML → {@link Schedule} із заняттями
+   * саме за вказану дату.
+   *
+   * <p>На відміну від {@link #creating(String)}, запасного варіанта немає:
+   * якщо вказаного дня у відповіді сервера немає, список занять буде
+   * порожнім. Це потрібно для тихого оновлення ввечері, коли треба
+   * отримати саме наступний день.</p>
+   *
+   * @param data HTML-сторінка розкладу
+   * @param day  дата, за яку потрібні заняття
+   * @return розклад із часом оновлення {@code now} та заняттями за {@code day}
+   * @throws IllegalArgumentException якщо HTML порожній або дата не задана
+   * @throws IllegalStateException    якщо сервер повернув сторінку без розкладу
+   */
+  public Schedule creating(String data, LocalDate day) {
+    if (day == null) {
+      throw new IllegalArgumentException("Дата розкладу не задана");
+    }
+
+    List<Lesson> lessons = readLessons(data);
+    return new Schedule(ZonedDateTime.now(), selectDay(lessons, day));
+  }
+
+  /**
+   * Перевіряє відповідь сервера й повертає всі заняття тижня.
+   *
+   * @param data HTML-сторінка розкладу
+   * @return заняття, які вдалося розібрати
+   * @throws IllegalArgumentException якщо HTML порожній
+   * @throws IllegalStateException    якщо сервер повернув форму замість розкладу
+   */
+  private List<Lesson> readLessons(String data) {
     if (data == null || data.trim().isEmpty()) {
       throw new IllegalArgumentException("Сервер повернув порожню сторінку розкладу");
     }
@@ -181,7 +218,7 @@ public class CreateSchedule {
       throw new IllegalStateException(
           "Сервер не повернув розклад — перевірте параметри запиту");
     }
-    return new Schedule(ZonedDateTime.now(), selectDay(lessons));
+    return lessons;
   }
 
   /**
@@ -201,11 +238,7 @@ public class CreateSchedule {
     }
 
     LocalDate today = LocalDate.now();
-    for (Lesson lesson : lessons) {
-      if (lesson.startsAt != null && today.equals(lesson.startsAt.toLocalDate())) {
-        selected.add(lesson);
-      }
-    }
+    selected = selectDay(lessons, today);
     if (!selected.isEmpty()) {
       return selected;
     }
@@ -227,6 +260,31 @@ public class CreateSchedule {
 
     for (Lesson lesson : lessons) {
       if (lesson.startsAt != null && firstDay.equals(lesson.startsAt.toLocalDate())) {
+        selected.add(lesson);
+      }
+    }
+    return selected;
+  }
+
+  /**
+   * Залишає заняття лише за вказану дату.
+   *
+   * <p>Використовується, коли день відомий точно (наприклад, наступний
+   * день під час тихого оновлення ввечері). Якщо такого дня у відповіді
+   * сервера немає, повертається порожній список.</p>
+   *
+   * @param lessons усі заняття тижня
+   * @param day     потрібна дата
+   * @return заняття за цей день; ніколи не {@code null}
+   */
+  private List<Lesson> selectDay(List<Lesson> lessons, LocalDate day) {
+    List<Lesson> selected = new ArrayList<>();
+    if (lessons == null || day == null) {
+      return selected;
+    }
+
+    for (Lesson lesson : lessons) {
+      if (lesson.startsAt != null && day.equals(lesson.startsAt.toLocalDate())) {
         selected.add(lesson);
       }
     }
