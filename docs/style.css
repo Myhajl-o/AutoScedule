@@ -1,0 +1,75 @@
+:root {
+  --ink: #000;
+  --paper: #fff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  width: 100%;
+  max-width: 520px;
+}
+
+h1 {
+  margin: 0 0 28px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--ink);
+}
+
+.row:last-child {
+  border-bottom: 1px solid var(--ink);
+}
+
+.label {
+  font-size: 13px;
+}
+
+.button {
+  flex: none;
+  padding: 6px 14px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.button:hover,
+.button:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
