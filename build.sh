@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# Повна збірка AutoSchedule: пакування → вирівнювання → підпис → перевірка.
+# Full AutoSchedule build: packaging → alignment → signing → verification.
 #
-# Результат: app-signed.apk у корені проєкту.
+# Result: app-signed.apk in the project root.
 #
-# Використання:
+# Usage:
 #   ./build.sh
 #
 set -euo pipefail
@@ -20,9 +20,9 @@ INPUT_APK="target/autoschedule-1.0.0.apk"
 ALIGNED_APK="target/autoschedule-1.0.0-aligned.apk"
 OUTPUT_APK="app-signed.apk"
 
-# debug.keystore не зберігається в git — створюємо локальний, якщо його немає.
+# debug.keystore is not stored in git — create a local one if it is missing.
 if [ ! -f debug.keystore ]; then
-  echo "== 0/4 Створення debug.keystore"
+  echo "== 0/4 Creating debug.keystore"
   "$KEYTOOL" -genkeypair -v \
     -keystore debug.keystore \
     -storepass android -keypass android \
@@ -31,22 +31,22 @@ if [ ! -f debug.keystore ]; then
     -dname "CN=Android Debug,O=Android,C=US" >/dev/null
 fi
 
-echo "== 1/4 Пакування"
+echo "== 1/4 Packaging"
 mvn -B clean package
 
-# Мохо zipalign зберігає результат в окремий файл; якщо з якоїсь причини
-# його немає — вирівнюємо самостійно.
+# Moho's zipalign saves the result to a separate file; if for some reason
+# it is missing — align manually.
 if [ ! -f "$ALIGNED_APK" ]; then
-  echo "== 2/4 Вирівнювання (вручну, мохо не створив $ALIGNED_APK)"
+  echo "== 2/4 Alignment (manual, Moho did not create $ALIGNED_APK)"
   "$ZIPALIGN" -f -p 4 "$INPUT_APK" "$ALIGNED_APK"
 else
-  echo "== 2/4 Вирівнювання (зроблено під час mvn package)"
+  echo "== 2/4 Alignment (done during mvn package)"
 fi
 
 "$ZIPALIGN" -c 4 "$ALIGNED_APK" >/dev/null
-echo "   вирівнювання OK"
+echo "   alignment OK"
 
-echo "== 3/4 Підпис"
+echo "== 3/4 Signing"
 "$APKSIGNER" sign \
   --ks debug.keystore \
   --ks-pass pass:android \
@@ -54,10 +54,10 @@ echo "== 3/4 Підпис"
   --out "$OUTPUT_APK" \
   "$ALIGNED_APK"
 
-echo "== 4/4 Перевірка"
+echo "== 4/4 Verification"
 "$APKSIGNER" verify "$OUTPUT_APK"
 "$ZIPALIGN" -c 4 "$OUTPUT_APK" >/dev/null
 
 echo
-echo "Готово: $OUTPUT_APK ($(du -h "$OUTPUT_APK" | cut -f1))"
+echo "Done: $OUTPUT_APK ($(du -h "$OUTPUT_APK" | cut -f1))"
 sha256sum "$OUTPUT_APK"
