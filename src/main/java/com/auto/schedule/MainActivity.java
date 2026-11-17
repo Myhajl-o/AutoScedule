@@ -1,6 +1,7 @@
 package com.auto.schedule;
 
 import android.app.Activity;
+import android.app.NotificationManager;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -106,6 +107,7 @@ public class MainActivity extends Activity {
 
     ReminderReceiver.scheduleDaily(this);
     requestNotificationPermission();
+    warnIfNotificationsDisabled();
   }
 
   // ------------------------------------------------------------------
@@ -263,6 +265,29 @@ public class MainActivity extends Activity {
             != PackageManager.PERMISSION_GRANTED) {
       requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},
           REQUEST_NOTIFICATIONS);
+    }
+  }
+
+  /** На Android 12 і нижче дозвіл видається в налаштуваннях, а не запитом. */
+  private void warnIfNotificationsDisabled() {
+    if (Build.VERSION.SDK_INT >= 33) {
+      return;
+    }
+    NotificationManager manager = (NotificationManager)
+        getSystemService(NOTIFICATION_SERVICE);
+    if (manager != null && !manager.areNotificationsEnabled()) {
+      toast("Notifications are disabled: reminders will not be shown");
+    }
+  }
+
+  @Override
+  public void onRequestPermissionsResult(int requestCode, String[] permissions,
+      int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (requestCode == REQUEST_NOTIFICATIONS
+        && (grantResults.length == 0
+            || grantResults[0] != PackageManager.PERMISSION_GRANTED)) {
+      toast("Notifications are disabled: reminders will not be shown");
     }
   }
 

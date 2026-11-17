@@ -11,9 +11,6 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-: "${ANDROID_HOME:=/home/misha/DevAndroidTools}"
-export ANDROID_HOME
-
 BUILD_TOOLS="$ANDROID_HOME/build-tools/30.0.3"
 ZIPALIGN="$BUILD_TOOLS/zipalign"
 APKSIGNER="$BUILD_TOOLS/apksigner"

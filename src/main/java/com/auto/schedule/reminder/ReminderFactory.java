@@ -58,12 +58,14 @@ public class ReminderFactory {
         }
 
         long triggerAt = msg.time.toInstant().toEpochMilli();
-        if (triggerAt <= now) {
-          continue;
+        if (triggerAt < now) {
+          // Нагадування «зараз» (пара почнеться менш ніж за 10 хв):
+          // минулий час AlarmManager не приймає, тому ставимо +1 секунду.
+          triggerAt = now + 1000L;
         }
 
         int requestCode = requestCode(msg);
-        PendingIntent pendingIntent = pendingIntent(requestCode);
+        PendingIntent pendingIntent = pendingIntent(requestCode, msg);
         alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent);
         codes.add(String.valueOf(requestCode));
       }
@@ -84,6 +86,25 @@ public class ReminderFactory {
     prefs().edit().remove(KEY_CODES).apply();
   }
 
+  /**
+   * PendingIntent для показу нагадування.
+   *
+   * <p>Текст і час передаються в extras: без них {@code ReminderReceiver}
+   * не знає, що саме показувати, і мовчки нічого не робить.</p>
+   */
+  private PendingIntent pendingIntent(int requestCode, Massage msg) {
+    Intent intent = new Intent(context, ReminderReceiver.class)
+        .setAction(ReminderReceiver.ACTION_SHOW_REMINDER)
+        .putExtra(ReminderReceiver.EXTRA_MESSAGE, msg.msg)
+        .putExtra(ReminderReceiver.EXTRA_TIME, msg.time.toInstant().toEpochMilli());
+    return PendingIntent.getBroadcast(context, requestCode, intent,
+        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+  }
+
+  /**
+   * PendingIntent лише для скасування: extras не впливають на збіг
+   * (важливі компонент, дія й код запиту).
+   */
   private PendingIntent pendingIntent(int requestCode) {
     Intent intent = new Intent(context, ReminderReceiver.class)
         .setAction(ReminderReceiver.ACTION_SHOW_REMINDER);
