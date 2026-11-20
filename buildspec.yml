@@ -1,0 +1,93 @@
+version: 0.2
+
+env:
+  shell: bash
+  variables:
+    ANDROID_HOME: "/opt/android-sdk"
+  secrets-manager:
+    KEYSTORE_BASE64: "autoschedule/signing:keystore_base64"
+    STORE_PASSWORD: "autoschedule/signing:store_password"
+    KEY_PASSWORD: "autoschedule/signing:key_password"
+    KEY_ALIAS: "autoschedule/signing:key_alias"
+
+phases:
+  install:
+    commands:
+      - |
+        set -euo pipefail
+
+        SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+
+        # yes може завершитися через закритий канал після відповіді.
+        (yes || true) | "$SDKMANAGER" \
+          --sdk_root="$ANDROID_HOME" --licenses
+
+        "$SDKMANAGER" --sdk_root="$ANDROID_HOME" \
+          "platforms;android-30" \
+          "build-tools;30.0.3" \
+          "platform-tools"
+
+  pre_build:
+    commands:
+      - |
+        set -euo pipefail
+
+        export PATH="$ANDROID_HOME/build-tools/30.0.3:$ANDROID_HOME/platform-tools:$PATH"
+
+        java -version
+        mvn -version
+        apksigner version
+
+        test -f "$ANDROID_HOME/platforms/android-30/android.jar"
+        test -f build.sh
+        test -f pom.xml
+
+        # Прибираємо попередні результати, якщо вони є.
+        mkdir -p release
+        rm -f release/AutoSchedule.apk release/AutoSchedule.apk.sha256
+
+  build:
+    commands:
+      - |
+        set -euo pipefail
+
+        # Скрипт виконує Maven-збірку, вирівнювання та debug-підпис.
+        bash ./build.sh
+
+        # Для розповсюдження підписуємо вирівняний APK постійним ключем.
+        umask 077
+        KEYSTORE_PATH="$(mktemp)"
+        trap 'rm -f "$KEYSTORE_PATH"' EXIT
+
+        printf '%s' "$KEYSTORE_BASE64" \
+          | base64 --decode > "$KEYSTORE_PATH"
+
+        BUILD_TOOLS="$ANDROID_HOME/build-tools/30.0.3"
+        ALIGNED_APK="target/autoschedule-1.0.0-aligned.apk"
+        RELEASE_APK="target/AutoSchedule-release.apk"
+
+        "$BUILD_TOOLS/apksigner" sign \
+          --ks "$KEYSTORE_PATH" \
+          --ks-key-alias "$KEY_ALIAS" \
+          --ks-pass env:STORE_PASSWORD \
+          --key-pass env:KEY_PASSWORD \
+          --out "$RELEASE_APK" \
+          "$ALIGNED_APK"
+
+        "$BUILD_TOOLS/apksigner" verify --verbose "$RELEASE_APK"
+        "$BUILD_TOOLS/zipalign" -c 4 "$RELEASE_APK"
+
+        cp "$RELEASE_APK" release/AutoSchedule.apk
+        chmod 644 release/AutoSchedule.apk
+
+        (
+          cd release
+          sha256sum AutoSchedule.apk > AutoSchedule.apk.sha256
+          chmod 644 AutoSchedule.apk.sha256
+        )
+
+artifacts:
+  base-directory: release
+  files:
+    - AutoSchedule.apk
+    - AutoSchedule.apk.sha256

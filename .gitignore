@@ -2,10 +2,9 @@
 /target
 /text
 
-# Build artifacts (sign them yourself with build.sh)
+
 *.apk
-*.apk.idsig
-*.keystore
+
 
 # IDE
 .idea/
